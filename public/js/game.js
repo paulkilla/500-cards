@@ -1,3 +1,5 @@
+import {Card} from "./src/Card.js";
+
 var config = {
   type: Phaser.AUTO,
   width: 800,
@@ -48,10 +50,11 @@ function create() {
   let playerCardCount = 0;
   let player = 0;
   deck.forEach(function(value) {
-    let card = theGame.add.image(playerCardCount * 60 + 100, player * 70 + 100, 'cards', value.Sprite).setInteractive();
-    theGame.input.setDraggable(card);
+    let theCard = theGame.add.existing( new Card(theGame, playerCardCount * 60 + 100, player * 70 + 100, ['cards', value.Sprite, value.Value, value.Suit]) ).setInteractive();
+    theGame.input.setDraggable(theCard);
     playerCardCount++;
     console.log("Card for player " + player + " Cards: " + playerCardCount);
+    console.log("Card Created: " + theCard.getCardValue());
     if(playerCardCount % 10 == 0) {
       player++;
       playerCardCount = 0;
