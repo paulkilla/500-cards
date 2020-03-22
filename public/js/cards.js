@@ -6,6 +6,10 @@ function getDeck() {
     let count = 0;
     for(let i = 0; i < suits.length; i++) {
         for(let x = 0; x < values.length; x++) {
+            // Need to remove the Black 13's as apparently they don't exist in 6 handed 500! TIL.
+            if((suits[i] == 'spades' || suits[i] == 'clubs') && values[x] == '13') {
+                continue;
+            }
             let card = {Value: values[x], Suit: suits[i], Sprite: count};
             deck.push(card);
             count++;

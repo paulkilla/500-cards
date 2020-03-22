@@ -25,21 +25,36 @@ function preload() {
 }
 
 function create() {
-  theGame = this;
+  //Declare theGame as this local object, so we can use it inside forEach loops etc where you can reference this as that object.
+  let theGame = this;
+  let players = [{'name': 'A', 'team': 'Red'}, {'name': 'B', 'team': 'Blue'}, {'name': 'C', 'team': 'Red'},
+                  {'name': 'D', 'team': 'Blue'}, {'name': 'E', 'team': 'Red'}, {'name': 'F', 'team': 'Blue'}]
   this.add.image(400, 300, 'background');
+
+  // Put player labels on the table
+  players.forEach(function(value, playerCount) {
+    if(playerCount > 2) {
+      theGame.add.text((320 * (playerCount++ - 3)) + 190, 560, value.name, { fontSize: '32px', fill: value.team});
+    } else {
+      theGame.add.text((320 * playerCount++) + 190, 16, value.name, { fontSize: '32px', fill: value.team});
+    }
+  });
+
+
   let deck = getDeck();
   // Comment and uncomment below to show shuffled and not shuffled!
-  //shuffle(deck);
+  shuffle(deck);
   // Let's just display all the cards as an example!
-  let i = 1;
-  let j = 1;
+  let playerCardCount = 0;
+  let player = 0;
   deck.forEach(function(value) {
-    let image = theGame.add.image(i * 60, j * 70, 'cards', value.Sprite).setInteractive();
-    theGame.input.setDraggable(image);
-    i++;
-    if(i % 17 == 0) {
-      j++;
-      i = 1;
+    let card = theGame.add.image(playerCardCount * 60 + 100, player * 70 + 100, 'cards', value.Sprite).setInteractive();
+    theGame.input.setDraggable(card);
+    playerCardCount++;
+    console.log("Card for player " + player + " Cards: " + playerCardCount);
+    if(playerCardCount % 10 == 0) {
+      player++;
+      playerCardCount = 0;
     }
   });
 
