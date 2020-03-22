@@ -2,9 +2,15 @@ export class Card extends Phaser.GameObjects.Sprite {
     cardValue;
     constructor(scene, x, y, myExtra)
     {
-        super(scene, x, y, myExtra[0], myExtra[1]);
-        console.log("Card value is: " + myExtra[2] + " " +  myExtra[3]);
-        this.setCardValue(myExtra[2], myExtra[3]);
+        if(myExtra.currentUser == myExtra.player) {
+            super(scene, x, y, myExtra.scene, myExtra.sprite);
+        } else {
+            if(myExtra.cardCount != 0) {
+                x = x - (25 * myExtra.cardCount);
+            }
+            super(scene, x, y, myExtra.scene, 64);
+        }
+        this.setCardValue(myExtra.suit, myExtra.value);
     }
 
     setCardValue(suit, value) {
