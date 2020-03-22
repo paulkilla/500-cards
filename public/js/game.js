@@ -25,25 +25,32 @@ function preload() {
 }
 
 function create() {
+  theGame = this;
   this.add.image(400, 300, 'background');
-  for(let i = 1; i < 17; i++) {
-    this.add.image(i*60 + 5, 50, 'cards', i - 1);
-  }
-  for(let i = 1; i < 17; i++) {
-    this.add.image(i*60, 150, 'cards', i - 1 + 16);
-  }
+  let deck = getDeck();
+  // Comment and uncomment below to show shuffled and not shuffled!
+  //shuffle(deck);
+  // Let's just display all the cards as an example!
+  let i = 1;
+  let j = 1;
+  deck.forEach(function(value) {
+    let image = theGame.add.image(i * 60, j * 70, 'cards', value.Sprite).setInteractive();
+    theGame.input.setDraggable(image);
+    i++;
+    if(i % 17 == 0) {
+      j++;
+      i = 1;
+    }
+  });
 
-  for(let i = 1; i < 17; i++) {
-    this.add.image(i*60, 250, 'cards', i - 1 + 32);
-  }
+  this.input.on('dragstart', function (pointer, gameObject) {
+    this.children.bringToTop(gameObject);
+  }, this);
 
-  for(let i = 1; i < 17; i++) {
-    this.add.image(i*60, 350, 'cards', i - 1 + 48);
-  }
-
-  for(let i = 1; i < 5; i++) {
-    this.add.image(i*60, 450, 'cards', i - 1 + 64);
-  }
+  this.input.on('drag', function (pointer, gameObject, dragX, dragY) {
+    gameObject.x = dragX;
+    gameObject.y = dragY;
+  });
 }
 
 function update() {

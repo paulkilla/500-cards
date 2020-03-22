@@ -3,15 +3,17 @@ let values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13
 
 function getDeck() {
     let deck = new Array();
-
+    let count = 0;
     for(let i = 0; i < suits.length; i++) {
         for(let x = 0; x < values.length; x++) {
-            let card = {Value: values[x], Suit: suits[i]};
+            let card = {Value: values[x], Suit: suits[i], Sprite: count};
             deck.push(card);
+            count++;
         }
     }
     // Let's add a Joker!
-    deck.push({Value: 'Joker', Suit: null});
+    // Also of note, Sprite 64 is the back of the cards.. good to know for later!
+    deck.push({Value: 'Joker', Suit: null, Sprite: 65});
     return deck;
 }
 
