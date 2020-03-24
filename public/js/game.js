@@ -1,10 +1,13 @@
 import {Card} from "./src/Card.js";
 import {Bid} from "./src/Bid.js";
 
-var config = {
+const config = {
   type: Phaser.AUTO,
   width: 800,
   height: 600,
+  dom: {
+    createContainer: true
+  },
   scene: {
     preload: preload,
     create: create,
@@ -19,70 +22,124 @@ var config = {
   }
 };
 
-var game = new Phaser.Game(config);
-//Hard Code username for now...
-var myUsername = 'A';
+let game = new Phaser.Game(config);
+let socketId = null;
+let players = [];
 
 function preload() {
   // Load images here
+  this.load.html('nameform', 'assets/html/nameform.html');
   this.load.image('background', 'assets/background.jpg');
   this.load.spritesheet('cards', 'assets/cards.png', {frameWidth: 52, frameHeight: 74});
 }
 
 function create() {
-  //Declare theGame as this local object, so we can use it inside forEach loops etc where you can reference this as
-  // that object.
-  let theGame = this;
-  let players = [{'name': 'A', 'team': 'Red'}, {'name': 'B', 'team': 'Blue'}, {'name': 'C', 'team': 'Red'},
-                  {'name': 'D', 'team': 'Blue'}, {'name': 'E', 'team': 'Red'}, {'name': 'F', 'team': 'Blue'}];
-  this.add.image(400, 300, 'background');
+  let self = this;
+  this.add.image(440, 300, 'background');
+  let socket = io();
+  let text = this.add.text(275, 200, 'Please enter your name and select team.', { color: 'white', fontSize: '20px '});
+  let element = this.add.dom(500, 300).createFromCache('nameform');
+  element.addListener('click');
+  element.on('click', function (event) {
+    if (event.target.name === 'playButton') {
+      let inputName = this.getChildByName('nameField');
+      let teamSelection = document.getElementsByName('team');
+      let teamSelected = null;
+      for (let i = 0, length = teamSelection.length; i < length; i++) {
+        if (teamSelection[i].checked) {
+          teamSelected = teamSelection[i].value;
+          break;
+        }
+      }
+      if (inputName.value !== '' && teamSelected != null) {
+        //  Turn off the click events
+        this.removeListener('click');
+        //  Hide the login element
+        this.setVisible(false);
+        text.setText('Welcome ' + inputName.value);
+        players[socket.id] = {
+          name: inputName.value,
+          playerId: socket.id,
+          team: teamSelected
+        };
+        socket.emit('addPlayer', players[socket.id]);
+        socketId = socket.id;
+      }
+    }
+  });
 
   // Put player labels on the table
-  players.forEach(function(value, playerCount) {
+  /*players.forEach(function(value, playerCount) {
     if(playerCount > 2) {
-      theGame.add.text((320 * (playerCount++ - 3)) + 190, 560, value.name, { fontSize: '32px', fill: value.team});
+      self.add.text((320 * (playerCount++ - 3)) + 190, 560, value.name, { fontSize: '32px', fill: value.team});
     } else {
-      theGame.add.text((320 * playerCount++) + 190, 16, value.name, { fontSize: '32px', fill: value.team});
+      self.add.text((320 * playerCount++) + 190, 16, value.name, { fontSize: '32px', fill: value.team});
     }
-  });
+  });*/
 
-
-  let deck = getDeck();
-  // Comment and uncomment below to show shuffled and not shuffled!
-  shuffle(deck);
-  // Let's just display all the cards as an example!
-  let playerCardCount = 0;
-  let player = 0;
-  deck.forEach(function(value) {
-    let theCard;
-    if(player < 6) {
-      theCard = theGame.add.existing( new Card(theGame, playerCardCount * 45 + 30, player * 70 + 100,
-          {'scene': 'cards', 'sprite': value.Sprite, 'value': value.Value, 'suit': value.Suit, 'currentUser': myUsername, 'player': players[player].name, 'cardCount': playerCardCount}) );
-      if(myUsername == players[player].name) {
-        theCard.setInteractive();
-        theGame.input.setDraggable(theCard);
-        theGame.input.on('dragstart', function (pointer, gameObject) {
-          theGame.children.bringToTop(gameObject);
-        }, this);
-
-        theGame.input.on('drag', function (pointer, gameObject, dragX, dragY) {
-          gameObject.x = dragX;
-          gameObject.y = dragY;
-        });
+  socket.on('broadcastPlayers', function (players) {
+    console.log("New player joined. Players: ");
+    console.log(players);
+    Object.keys(players).forEach(function (id) {
+      if (players[id].playerId === socket.id) {
+        console.log("New player joined. Existing: " + id);
+        addPlayer(self, players[id]);
       }
-    } else {
-      theCard = theGame.add.existing( new Card(theGame, playerCardCount * 45 + 30, player * 70 + 100,
-          {'scene': 'cards', 'sprite': value.Sprite, 'value': value.Value, 'suit': value.Suit, 'currentUser': myUsername, 'player': '_kitty', 'cardCount': playerCardCount}) );
-    }
-    playerCardCount++;
-    if(playerCardCount % 10 == 0) {
-      player++;
-      playerCardCount = 0;
-    }
+    });
   });
-  //this.scene.add('bid', Bid, true, { x: 400, y: 300 });
+
+  socket.on('broadcastDeck', function (deck) {
+    console.log("Dished up another deck!");
+    console.log(deck);
+    deck.forEach(function(hand, playerCount) {
+      let cards = hand.cards;
+      cards.forEach(function(card,cardCount) {
+        let theCard = self.add.existing( new Card(self, cardCount * 45 + 30, playerCount * 70 + 100,
+            {'scene': 'cards', 'sprite': card.Sprite, 'value': card.Value,
+              'suit': card.Suit, 'currentUser': socketId, 'player': hand.player,
+              'cardCount': cardCount}) );
+        if(socketId == hand.player) {
+          theCard.setInteractive();
+          self.input.setDraggable(theCard);
+          self.input.on('dragstart', function (pointer, gameObject) {
+            self.children.bringToTop(gameObject);
+          }, this);
+
+          self.input.on('drag', function (pointer, gameObject, dragX, dragY) {
+            gameObject.x = dragX;
+            gameObject.y = dragY;
+          });
+        }
+      });
+    });
+  });
+
 }
 
 function update() {
 
+}
+
+
+function addPlayer(self, playerInfo) {
+  //self.add.text((320) + 190, 16, playerInfo.name, { fontSize: '32px', fill: playerInfo.team});
+  players.push(playerInfo);
+  //self.ship = self.add.image(playerInfo.x, playerInfo.y, 'ship').setOrigin(0.5, 0.5).setDisplaySize(53, 40);
+  if (playerInfo.team === 'Blue') {
+    //self.ship.setTint(0x0000ff);
+  } else {
+    //self.ship.setTint(0xff0000);
+  }
+}
+
+function addOtherPlayers(self, playerInfo) {
+  console.log("Inside addOtherPlayers");
+  //const otherPlayer = self.add.sprite(playerInfo.x, playerInfo.y, 'otherPlayer').setOrigin(0.5, 0.5).setDisplaySize(53, 40);
+  if (playerInfo.team === 'Blue') {
+    //otherPlayer.setTint(0x0000ff);
+  } else {
+    //otherPlayer.setTint(0xff0000);
+  }
+  //otherPlayer.playerId = playerInfo.playerId;
+  //self.otherPlayers.add(otherPlayer);
 }
