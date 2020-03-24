@@ -21,6 +21,9 @@ https://gamedevacademy.org/create-a-basic-multiplayer-game-in-phaser-3-with-sock
 And this for game example references:
 https://phaser.io/tutorials/making-your-first-phaser-3-game/part1
 
+And Cards API:
+http://kbjr.github.io/node-cards/Card.html
+
 But anything on phaser is good too!
 
 Looks like some logic needs to go in server.js, e.g. what to do when a new player joins, storing things like Player 

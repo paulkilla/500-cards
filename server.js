@@ -37,7 +37,8 @@ io.on('connection', function (socket) {
     io.emit('broadcastPlayers', players);
     console.log(players);
     console.log(Object.keys(players).length);
-    if(Object.keys(players).length == 2) {
+    // Change this to deal cards at an earlier point, otherwise 6?
+    if(Object.keys(players).length == 6) {
       console.log("6 Players, let's deal!");
       let deck = createNewDeck(players);
       console.log("Created Deck for game");
