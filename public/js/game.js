@@ -113,6 +113,9 @@ function create() {
       if (event.target.name === 'bidButton') {
         console.log("Bid Button selected.");
       }
+      if (event.target.name === 'passButton') {
+        console.log("Pass Button selected.");
+      }
     });
   });
 
