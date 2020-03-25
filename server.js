@@ -33,7 +33,7 @@ io.on('connection', function (socket) {
     // Broadcast players list to all players.
     io.emit('broadcastPlayers', players);
     // Change this to deal cards at an earlier point, otherwise 6?
-    if(Object.keys(players).length == 6) {
+    if(Object.keys(players).length == 1) {
       io.emit('startGame', players);
       console.log("6 Players, let's deal!");
       let deck = createNewDeck(players);
@@ -66,7 +66,7 @@ io.on('connection', function (socket) {
 });
 
 server.listen(8081, function () {
-  console.log(`Listening on ${server.address().port}`);
+  console.log(`Listening on ${server.address().address}:${server.address().port}`);
 });
 
 function createNewDeck(players) {

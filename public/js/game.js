@@ -127,6 +127,7 @@ function create() {
             {'scene': 'cards', 'sprite': card.Sprite, 'value': card.Value,
               'suit': card.Suit, 'currentUser': socketId, 'player': hand.player,
               'cardCount': cardCount}) );
+        theCard.setScale(0.95);
         if(socketId == hand.player) {
           theCard.setInteractive();
           self.input.setDraggable(theCard);
