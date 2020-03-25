@@ -29,15 +29,19 @@ let players = [];
 function preload() {
   // Load images here
   this.load.html('nameform', 'assets/html/nameform.html');
+  this.load.html('bidform', 'assets/html/bidform.html');
   this.load.image('background', 'assets/background.jpg');
   this.load.spritesheet('cards', 'assets/cards.png', {frameWidth: 52, frameHeight: 74});
 }
 
 function create() {
   let self = this;
+  let countText;
+  let currentPlayerText;
+  let bidForm;
   this.add.image(440, 300, 'background');
   let socket = io();
-  let text = this.add.text(275, 200, 'Please enter your name and select team.', { color: 'white', fontSize: '20px '});
+  let welcomeText = this.add.text(275, 200, 'Please enter your name and select team.', { color: 'white', fontSize: '20px '});
   let element = this.add.dom(500, 300).createFromCache('nameform');
   element.addListener('click');
   element.on('click', function (event) {
@@ -56,7 +60,7 @@ function create() {
         this.removeListener('click');
         //  Hide the login element
         this.setVisible(false);
-        text.setText('Welcome ' + inputName.value);
+        welcomeText.setText('Welcome ' + inputName.value + "... waiting on more players.");
         players[socket.id] = {
           name: inputName.value,
           playerId: socket.id,
@@ -68,29 +72,51 @@ function create() {
     }
   });
 
-  // Put player labels on the table
-  /*players.forEach(function(value, playerCount) {
-    if(playerCount > 2) {
-      self.add.text((320 * (playerCount++ - 3)) + 190, 560, value.name, { fontSize: '32px', fill: value.team});
-    } else {
-      self.add.text((320 * playerCount++) + 190, 16, value.name, { fontSize: '32px', fill: value.team});
-    }
-  });*/
-
   socket.on('broadcastPlayers', function (players) {
     console.log("New player joined. Players: ");
     console.log(players);
+    let playerCount = 0;
+    let listOfPlayers = '';
+    if(countText != null) {
+      countText.destroy();
+      currentPlayerText.destroy();
+    }
+
     Object.keys(players).forEach(function (id) {
       if (players[id].playerId === socket.id) {
         console.log("New player joined. Existing: " + id);
         addPlayer(self, players[id]);
       }
+      playerCount++;
+      listOfPlayers += players[id].name + '(' + players[id].team + '), ';
+    });
+    countText = self.add.text(275, 300, 'Currently ' + playerCount + ' players joined. Waiting on ' + (6-playerCount) + ' more.', { color: 'white', fontSize: '20px '});
+    currentPlayerText = self.add.text(275, 400, 'Players: ' + listOfPlayers.substring(0, listOfPlayers.length - 2));
+    if(playerCount == 6) {
+      countText.destroy();
+      currentPlayerText.destroy();
+      welcomeText.destroy();
+    }
+  });
+
+  socket.on('startGame', function (players) {
+    console.log("Start Game");
+  });
+
+  socket.on('showBidForm', function(data) {
+    let currentBid = data.currentBid;
+    let biddingPlayer = data.biddingPlayer;
+    bidForm = self.add.dom(500, 300).createFromCache('bidform');
+    document.getElementById('currentBid').innerHTML = 'Current Bid: ' + currentBid + ' (' + biddingPlayer + ')';
+    bidForm.addListener('click');
+    bidForm.on('click', function (event) {
+      if (event.target.name === 'bidButton') {
+        console.log("Bid Button selected.");
+      }
     });
   });
 
   socket.on('broadcastDeck', function (deck) {
-    console.log("Dished up another deck!");
-    console.log(deck);
     deck.forEach(function(hand, playerCount) {
       let cards = hand.cards;
       cards.forEach(function(card,cardCount) {

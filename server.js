@@ -23,9 +23,6 @@ io.on('connection', function (socket) {
     io.emit('disconnect', socket.id);
   });
 
-
-  // Let new player see existing players
-  socket.emit('broadcastPlayers', players);
   // Run this when we enter a name and team on the UI
   socket.on('addPlayer', function (newPlayer) {
     players[socket.id] = {
@@ -35,15 +32,15 @@ io.on('connection', function (socket) {
     };
     // Broadcast players list to all players.
     io.emit('broadcastPlayers', players);
-    console.log(players);
-    console.log(Object.keys(players).length);
     // Change this to deal cards at an earlier point, otherwise 6?
     if(Object.keys(players).length == 6) {
+      io.emit('startGame', players);
       console.log("6 Players, let's deal!");
       let deck = createNewDeck(players);
-      console.log("Created Deck for game");
-      console.log(deck);
       io.emit('broadcastDeck', deck);
+      // Send bid screen for first player
+      console.log("Sending showBidForm for player: " + players[Object.keys(players)[0]].name);
+      socket.broadcast.to(players[Object.keys(players)[0]].playerId).emit('showBidForm', {'currentBid': 'N/A', 'biddingPlayer': 'N/A'});
     }
   });
 
@@ -88,7 +85,6 @@ function createNewDeck(players) {
   let newDeck = [];
   let drawnCards = deck.draw(63);
   drawnCards.forEach(function(drawnCard, index) {
-    console.log(index);
     newDeck.push({Value: drawnCard.value, Suit: drawnCard.suit, Sprite: index});
   });
   for (let i = newDeck.length - 1; i > 0; i--) {
