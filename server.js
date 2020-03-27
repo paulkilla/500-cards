@@ -7,7 +7,11 @@ let io = require('socket.io').listen(server);
 const cards = require('cards');
 let players = {};
 let scores = {'blue': 0, 'red': 0};
+let currentIndex = 0;
 let currentPlayer = 0;
+let biddingPlayer = '';
+let currentBid = '';
+let passedPlayers = [];
 // Change this to deal cards earlier.
 const PLAYERS = 3;
 
@@ -40,24 +44,47 @@ io.on('connection', function (socket) {
     if(Object.keys(players).length == PLAYERS) {
       scores = {'blue': 0, 'red': 0};
       io.emit('startGame', players);
-      //Push this into common code to start a round... bidding etc recursion for the win.
-      //Get a random starting player
       let startingPlayer = Math.round(Math.random() * (PLAYERS - 1));
-      startRound(socket, startingPlayer);
+      currentIndex = startingPlayer;
+      startRound(socket, currentIndex);
     }
   });
 
   // Run this when we enter a name and team on the UI
   socket.on('submitBid', function (data) {
     console.log("Received submitBid");
+    console.log(data);
     let bidOrPass = data.bidOrPass;
+    let bid = data.bid;
     if(bidOrPass == 'bid') {
-      let bid = data.bid;
+      biddingPlayer = socket.id;
+      currentBid = bid;
     } else if(bidOrPass == 'pass') {
+      // Do we need to do anything, maybe check if all players passed?
+      passedPlayers.push(socket.id);
+      if(passedPlayers.length == Object.keys(players).length) {
+        //Everyone passed, re-deal!
+        currentIndex = getNextPlayer(currentIndex);
+        startRound(socket, currentIndex);
+        return;
+      }
+      if(biddingPlayer == '') {
+        biddingPlayer = socket.id;
+        currentBid = 'PASS!';
+      }
+    }
 
-    } else if(bidOrPass == 'final') {
-      let bid = data.bid;
-
+    if(bidOrPass == 'final') {
+      // Final bid, submitted, kick off game!
+      //FINAL BID and WINNER OF BID
+      currentBid = bid;
+      biddingPlayer = socket.id;
+      console.log("Final Bid submitted - Let's start the game!");
+      // io.emit('startGame', {'bid': currentBid, 'trumps': 'suit_here', 'tricks_required': 'tricks_required', 'bidWinner': players[biddingPlayer].name});
+    } else {
+      // If false, it means everyone has passed except this last player.. so show form with final choice.
+      let shown = showNextBidForm(socket, currentBid, biddingPlayer);
+      console.log("Bidding Result: " + shown);
     }
   });
 
@@ -92,14 +119,13 @@ server.listen(8081, function () {
  * @param startingPlayer (index of starting player)
  */
 function startRound(socket, startingPlayer) {
+  biddingPlayer = '';
+  currentBid = '';
+  passedPlayers = [];
   console.log("Inside startRound with starting player: " + startingPlayer);
   console.log("Deal out deck to all players");
   let deck = createNewDeck(players);
   io.emit('broadcastDeck', deck);
-  Object.keys(players).forEach(function (id) {
-    players[id].bid = 'N/A';
-  });
-
   let count = 0;
   for (let key in players) {
     if(count == startingPlayer) {
@@ -114,6 +140,39 @@ function startRound(socket, startingPlayer) {
   }
 }
 
+function showNextBidForm(socket, bid, biddingPlayer) {
+  console.log(biddingPlayer);
+  currentPlayer = getNextPlayer(currentPlayer);
+  let count = 0;
+  for (let key in players) {
+    if(count == currentPlayer) {
+      if(!passedPlayers.includes(players[key].playerId)) {
+        // Make sure we only do this for non-passed players
+        console.log("Next player to bid: " + players[key].name);
+        // Send bid screen of next player
+        if(passedPlayers.length == Object.keys(players).length - 1) {
+          // This means everyone else has passed, show form with this info on it.
+          socket.broadcast.to(players[key].playerId).emit('showBidForm', {'currentBid': bid, 'biddingPlayer': players[biddingPlayer].name, 'final': true});
+        } else {
+          socket.broadcast.to(players[key].playerId).emit('showBidForm', {'currentBid': bid, 'biddingPlayer': players[biddingPlayer].name, 'final': false});
+        }
+        return true;
+      } else {
+        // Need to do recursion here
+        return showNextBidForm(socket, bid, biddingPlayer);
+      }
+      break;
+    }
+    count++;
+  }
+  return false;
+}
+
+/**
+ * Use this function to create the deck of cards for each round
+ * @param players
+ * @returns an array of cards {[]}
+ */
 function createNewDeck(players) {
   let playersCards = [];
   let deck = new cards.Deck();
@@ -161,3 +220,12 @@ function createNewDeck(players) {
 
   return playersCards;
 }
+
+let getNextPlayer = function(playerNumber) {
+  if(playerNumber == Object.keys(players).length - 1) {
+    playerNumber = 0;
+  } else {
+    playerNumber++;
+  }
+  return playerNumber;
+};

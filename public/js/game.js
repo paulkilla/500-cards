@@ -129,11 +129,19 @@ function create() {
   socket.on('showBidForm', function(data) {
     let currentBid = data.currentBid;
     let biddingPlayer = data.biddingPlayer;
+    let finalCall = data.final;
     bidForm = self.add.dom(500, 300).createFromCache('bidform');
     document.getElementById('currentBid').innerHTML = 'Current Bid: ' + currentBid + ' (' + biddingPlayer + ')';
+    if(finalCall) {
+      document.getElementById('bidButton').style.display = 'none';
+      if(currentBid != 'PASS!') {
+        document.getElementById('passButton').style.display = 'none';
+      }
+      document.getElementById('finalButton').style.display = 'block';
+    }
     bidForm.addListener('click');
     bidForm.on('click', function (event) {
-      if (event.target.name === 'bidButton') {
+      if (event.target.name === 'bidButton' || event.target.name == 'finalButton') {
         console.log("Bid Button selected.");
         let bids = document.getElementsByName('bid');
         let bidSelected = null;
@@ -144,13 +152,21 @@ function create() {
           }
         }
         if(bidSelected != null) {
-          if(bidToPoints(bidSelected) >= bidToPoints(currentBid)) {
+          if(bidToPoints(bidSelected) > bidToPoints(currentBid)) {
             // Bid is valid
-            socket.emit('submitBid', {'bidOrPass': 'bid', 'bid': bidSelected});
+            if(finalCall) {
+              socket.emit('submitBid', {'bidOrPass': 'final', 'bid': bidSelected});
+            } else {
+              socket.emit('submitBid', {'bidOrPass': 'bid', 'bid': bidSelected});
+            }
             this.destroy();
           } else {
-            // Bid is less than or the same as current bid...
-            alert('Bid must be higher than ' + currentBid (bidToPoints(currentBid)));
+            // Bid is less than or the same as current bid... unless final it can be the same.
+            if(finalCall && bidToPoints(bidSelected) == bidToPoints(currentBid)) {
+              socket.emit('submitBid', {'bidOrPass': 'final', 'bid': bidSelected});
+              this.destroy();
+            }
+            alert('Bid must be higher than ' + (bidToPoints(currentBid)));
           }
         }
       }
