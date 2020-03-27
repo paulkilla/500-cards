@@ -84,7 +84,6 @@ function create() {
 
     Object.keys(players).forEach(function (id) {
       if (players[id].playerId === socket.id) {
-        console.log("New player joined. Existing: " + id);
         addPlayer(self, players[id]);
       }
       playerCount++;
@@ -103,22 +102,6 @@ function create() {
     console.log("Start Game");
   });
 
-  socket.on('showBidForm', function(data) {
-    let currentBid = data.currentBid;
-    let biddingPlayer = data.biddingPlayer;
-    bidForm = self.add.dom(500, 300).createFromCache('bidform');
-    document.getElementById('currentBid').innerHTML = 'Current Bid: ' + currentBid + ' (' + biddingPlayer + ')';
-    bidForm.addListener('click');
-    bidForm.on('click', function (event) {
-      if (event.target.name === 'bidButton') {
-        console.log("Bid Button selected.");
-      }
-      if (event.target.name === 'passButton') {
-        console.log("Pass Button selected.");
-      }
-    });
-  });
-
   socket.on('broadcastDeck', function (deck) {
     deck.forEach(function(hand, playerCount) {
       let cards = hand.cards;
@@ -134,13 +117,47 @@ function create() {
           self.input.on('dragstart', function (pointer, gameObject) {
             self.children.bringToTop(gameObject);
           }, this);
-
           self.input.on('drag', function (pointer, gameObject, dragX, dragY) {
             gameObject.x = dragX;
             gameObject.y = dragY;
           });
         }
       });
+    });
+  });
+
+  socket.on('showBidForm', function(data) {
+    let currentBid = data.currentBid;
+    let biddingPlayer = data.biddingPlayer;
+    bidForm = self.add.dom(500, 300).createFromCache('bidform');
+    document.getElementById('currentBid').innerHTML = 'Current Bid: ' + currentBid + ' (' + biddingPlayer + ')';
+    bidForm.addListener('click');
+    bidForm.on('click', function (event) {
+      if (event.target.name === 'bidButton') {
+        console.log("Bid Button selected.");
+        let bids = document.getElementsByName('bid');
+        let bidSelected = null;
+        for (let i = 0, length = bids.length; i < length; i++) {
+          if (bids[i].checked) {
+            bidSelected = bids[i].value;
+            break;
+          }
+        }
+        if(bidSelected != null) {
+          if(bidToPoints(bidSelected) >= bidToPoints(currentBid)) {
+            // Bid is valid
+            socket.emit('submitBid', {'bidOrPass': 'bid', 'bid': bidSelected});
+            this.destroy();
+          } else {
+            // Bid is less than or the same as current bid...
+            alert('Bid must be higher than ' + currentBid (bidToPoints(currentBid)));
+          }
+        }
+      }
+      if (event.target.name === 'passButton') {
+        socket.emit('submitBid', {'bidOrPass': 'pass'});
+        this.destroy();
+      }
     });
   });
 
@@ -154,7 +171,6 @@ function update() {
 function addPlayer(self, playerInfo) {
   //self.add.text((320) + 190, 16, playerInfo.name, { fontSize: '32px', fill: playerInfo.team});
   players.push(playerInfo);
-  //self.ship = self.add.image(playerInfo.x, playerInfo.y, 'ship').setOrigin(0.5, 0.5).setDisplaySize(53, 40);
   if (playerInfo.team === 'Blue') {
     //self.ship.setTint(0x0000ff);
   } else {
@@ -172,4 +188,59 @@ function addOtherPlayers(self, playerInfo) {
   }
   //otherPlayer.playerId = playerInfo.playerId;
   //self.otherPlayers.add(otherPlayer);
+}
+
+function bidToPoints(bid) {
+  if(bid == '6S') {
+    return 40;
+  } else if(bid == '7S') {
+    return 140;
+  } else if(bid == '8S') {
+    return 240;
+  } else if(bid == '9S') {
+    return 340;
+  } else if(bid == '10S') {
+    return 440;
+  } else if(bid == '6C') {
+    return 60;
+  } else if(bid == '7C') {
+    return 160;
+  } else if(bid == '8C') {
+    return 260;
+  } else if(bid == '9C') {
+    return 360;
+  } else if(bid == '10C') {
+    return 460;
+  } else if(bid == '6D') {
+    return 80;
+  } else if(bid == '7D') {
+    return 180;
+  } else if(bid == '8D') {
+    return 280;
+  } else if(bid == '9D') {
+    return 380;
+  } else if(bid == '10D') {
+    return 480;
+  } else if(bid == '6H') {
+    return 100;
+  } else if(bid == '7H') {
+    return 200;
+  } else if(bid == '8H') {
+    return 300;
+  } else if(bid == '9H') {
+    return 400;
+  } else if(bid == '10H') {
+    return 500;
+  } else if(bid == '6NT') {
+    return 120;
+  } else if(bid == '7NT') {
+    return 220;
+  } else if(bid == '8NT') {
+    return 320;
+  } else if(bid == '9NT') {
+    return 420;
+  } else if(bid == '10NT') {
+    return 520;
+  }
+  return 0;
 }

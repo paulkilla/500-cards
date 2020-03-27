@@ -6,6 +6,10 @@ let server = require('http').Server(app);
 let io = require('socket.io').listen(server);
 const cards = require('cards');
 let players = {};
+let scores = {'blue': 0, 'red': 0};
+let currentPlayer = 0;
+// Change this to deal cards earlier.
+const PLAYERS = 3;
 
 app.use(express.static(__dirname + '/public'));
 
@@ -33,17 +37,29 @@ io.on('connection', function (socket) {
     // Broadcast players list to all players.
     io.emit('broadcastPlayers', players);
     // Change this to deal cards at an earlier point, otherwise 6?
-    if(Object.keys(players).length == 6) {
+    if(Object.keys(players).length == PLAYERS) {
+      scores = {'blue': 0, 'red': 0};
       io.emit('startGame', players);
-      console.log("6 Players, let's deal!");
-      let deck = createNewDeck(players);
-      io.emit('broadcastDeck', deck);
-      // Send bid screen for first player
-      console.log("Sending showBidForm for player: " + players[Object.keys(players)[0]].name);
-      socket.broadcast.to(players[Object.keys(players)[0]].playerId).emit('showBidForm', {'currentBid': 'N/A', 'biddingPlayer': 'N/A'});
+      //Push this into common code to start a round... bidding etc recursion for the win.
+      //Get a random starting player
+      let startingPlayer = Math.round(Math.random() * (PLAYERS - 1));
+      startRound(socket, startingPlayer);
     }
   });
 
+  // Run this when we enter a name and team on the UI
+  socket.on('submitBid', function (data) {
+    console.log("Received submitBid");
+    let bidOrPass = data.bidOrPass;
+    if(bidOrPass == 'bid') {
+      let bid = data.bid;
+    } else if(bidOrPass == 'pass') {
+
+    } else if(bidOrPass == 'final') {
+      let bid = data.bid;
+
+    }
+  });
 
 
 
@@ -69,23 +85,52 @@ server.listen(8081, function () {
   console.log(`Listening on ${server.address().address}:${server.address().port}`);
 });
 
+
+/**
+ * Use this function to start the round, creates the deck and broadcasts it to all players, also does the initial bid form
+ * @param socket
+ * @param startingPlayer (index of starting player)
+ */
+function startRound(socket, startingPlayer) {
+  console.log("Inside startRound with starting player: " + startingPlayer);
+  console.log("Deal out deck to all players");
+  let deck = createNewDeck(players);
+  io.emit('broadcastDeck', deck);
+  Object.keys(players).forEach(function (id) {
+    players[id].bid = 'N/A';
+  });
+
+  let count = 0;
+  for (let key in players) {
+    if(count == startingPlayer) {
+      // Set the currentPlayer index to this player (we will use this later to decide who's turn is next + bidding)
+      currentPlayer = startingPlayer;
+      console.log("Starting Round with player: " + players[key].name);
+      // Send bid screen for first player
+      socket.broadcast.to(players[key].playerId).emit('showBidForm', {'currentBid': 'N/A', 'biddingPlayer': 'N/A'});
+      break;
+    }
+    count++;
+  }
+}
+
 function createNewDeck(players) {
   let playersCards = [];
   let deck = new cards.Deck();
-  ['spade', 'club', 'diamond', 'hearts'].forEach(function(suit) {
-    [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 'J', 'Q', 'K', 'A'].forEach(function(value) {
-      if((suit == 'spade' || suit == 'club') && value == 13) {
-
-      } else {
-        deck.add(new cards.Card(suit, value));
-      }
+  ['diamonds', 'hearts', 'spades', 'clubs'].forEach(function(suit) {
+    ['A', 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 'J', 'Q', 'K'].forEach(function(value) {
+      deck.add(new cards.Card(suit, value));
     });
   });
   deck.add((new cards.Card('other', 'joker')));
   let newDeck = [];
-  let drawnCards = deck.draw(63);
+  let drawnCards = deck.draw(65);
   drawnCards.forEach(function(drawnCard, index) {
-    newDeck.push({Value: drawnCard.value, Suit: drawnCard.suit, Sprite: index});
+    if(drawnCard.value == 'joker') {
+      newDeck.push({Value: drawnCard.value, Suit: drawnCard.suit, Sprite: 65});
+    } else if(drawnCard.value != 13 && (drawnCard.suit != 'clubs' || drawnCard.suit != 'spades')) {
+      newDeck.push({Value: drawnCard.value, Suit: drawnCard.suit, Sprite: index});
+    }
   });
   for (let i = newDeck.length - 1; i > 0; i--) {
     let j = Math.floor(Math.random() * (i + 1));
