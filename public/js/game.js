@@ -25,6 +25,7 @@ const config = {
 let game = new Phaser.Game(config);
 let socketId = null;
 let players = [];
+let allCards = [];
 
 function preload() {
   // Load images here
@@ -103,6 +104,10 @@ function create() {
   });
 
   socket.on('broadcastDeck', function (deck) {
+    allCards.forEach(function(item) {
+      item.destroy();
+    });
+    allCards = [];
     deck.forEach(function(hand, playerCount) {
       let cards = hand.cards;
       cards.forEach(function(card,cardCount) {
@@ -122,6 +127,7 @@ function create() {
             gameObject.y = dragY;
           });
         }
+        allCards.push(theCard);
       });
     });
   });
