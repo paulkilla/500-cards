@@ -79,13 +79,20 @@ io.on('connection', function (socket) {
       //FINAL BID and WINNER OF BID
       currentBid = bid;
       biddingPlayer = socket.id;
-      console.log("Final Bid submitted - Let's start the game!");
-      // io.emit('startGame', {'bid': currentBid, 'trumps': 'suit_here', 'tricks_required': 'tricks_required', 'bidWinner': players[biddingPlayer].name});
+      console.log("Final Bid submitted - Time to let the winning player see the kitty and choose their cards! " + players[biddingPlayer].name);
+      socket.emit('showKitty');
     } else {
       // If false, it means everyone has passed except this last player.. so show form with final choice.
       let shown = showNextBidForm(socket, currentBid, biddingPlayer);
       console.log("Bidding Result: " + shown);
     }
+  });
+
+  socket.on('discardCards', function (data){
+    console.log("Cards Discarded... starting game.");
+    console.log(data);
+
+    // io.emit('startGame', {'bid': currentBid, 'trumps': 'suit_here', 'tricks_required': 'tricks_required', 'bidWinner': players[biddingPlayer].name});
   });
 
 
@@ -171,7 +178,7 @@ function showNextBidForm(socket, bid, biddingPlayer) {
 /**
  * Use this function to create the deck of cards for each round
  * @param players
- * @returns an array of cards {[]}
+ * @returns [] array of cards {[]}
  */
 function createNewDeck(players) {
   let playersCards = [];

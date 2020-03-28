@@ -168,11 +168,13 @@ function create() {
             this.destroy();
           } else {
             // Bid is less than or the same as current bid... unless final it can be the same.
-            if(finalCall && bidToPoints(bidSelected) == bidToPoints(currentBid)) {
+            if(finalCall && bidToPoints(bidSelected) >= bidToPoints(currentBid)) {
               socket.emit('submitBid', {'bidOrPass': 'final', 'bid': bidSelected});
               this.destroy();
+            } else {
+              // Not final bid and/or bid is lower than original bid.
+              alert('Bid must be higher than ' + (bidToPoints(currentBid)));
             }
-            alert('Bid must be higher than ' + (bidToPoints(currentBid)));
           }
         }
       }
@@ -182,6 +184,11 @@ function create() {
       }
     });
   });
+
+  socket.on('showKitty', function () {
+    console.log("Show Kitty");
+  });
+
 
 }
 
