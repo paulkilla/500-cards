@@ -206,7 +206,7 @@ function create() {
     message = self.add.text(275, 20, 'Select 3 cards to discard', { color: '#000000', fontSize: '20px', fontStyle: 'bold', backgroundColor: '#FFFFFF'});
     kittyCards.forEach(function(item, index) {
       item.showCardFace();
-      item.x = lastCardLocation.x + 50 * (index + 1);
+      item.x = lastCardLocation.x + (45 * (index + 1));
       item.y = lastCardLocation.y;
       myCards.push(item);
     });
