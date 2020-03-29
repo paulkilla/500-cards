@@ -12,6 +12,7 @@ let currentPlayer = 0;
 let biddingPlayer = '';
 let currentBid = '';
 let passedPlayers = [];
+let previousBids = [];
 // Change this to deal cards earlier.
 const PLAYERS = 6;
 
@@ -59,6 +60,7 @@ io.on('connection', function (socket) {
     if(bidOrPass == 'bid') {
       biddingPlayer = socket.id;
       currentBid = bid;
+      previousBids.push(players[biddingPlayer].name + ' (' + players[biddingPlayer].team + '): ' + bid);
     } else if(bidOrPass == 'pass') {
       // Do we need to do anything, maybe check if all players passed?
       passedPlayers.push(socket.id);
@@ -127,6 +129,7 @@ server.listen(8081, function () {
  * @param startingPlayer (index of starting player)
  */
 function startRound(socket, startingPlayer) {
+  previousBids = [];
   biddingPlayer = '';
   currentBid = '';
   passedPlayers = [];
@@ -141,7 +144,7 @@ function startRound(socket, startingPlayer) {
       currentPlayer = startingPlayer;
       console.log("Starting Round with player: " + players[key].name);
       // Send bid screen for first player
-      socket.broadcast.to(players[key].playerId).emit('showBidForm', {'currentBid': 'N/A', 'biddingPlayer': 'N/A'});
+      socket.broadcast.to(players[key].playerId).emit('showBidForm', {'currentBid': 'N/A', 'biddingPlayer': 'N/A', 'previousBids': previousBids});
       break;
     }
     count++;
@@ -167,9 +170,9 @@ function showNextBidForm(socket, bid, biddingPlayer) {
         // Send bid screen of next player
         if(passedPlayers.length == Object.keys(players).length - 1) {
           // This means everyone else has passed, show form with this info on it.
-          socket.broadcast.to(players[key].playerId).emit('showBidForm', {'currentBid': bid, 'biddingPlayer': players[biddingPlayer].name, 'final': true});
+          socket.broadcast.to(players[key].playerId).emit('showBidForm', {'currentBid': bid, 'biddingPlayer': players[biddingPlayer].name, 'final': true, 'previousBids': previousBids});
         } else {
-          socket.broadcast.to(players[key].playerId).emit('showBidForm', {'currentBid': bid, 'biddingPlayer': players[biddingPlayer].name, 'final': false});
+          socket.broadcast.to(players[key].playerId).emit('showBidForm', {'currentBid': bid, 'biddingPlayer': players[biddingPlayer].name, 'final': false, 'previousBids': previousBids});
         }
         return true;
       } else {

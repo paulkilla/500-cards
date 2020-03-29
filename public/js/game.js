@@ -144,6 +144,7 @@ function create() {
     let currentBid = data.currentBid;
     let biddingPlayer = data.biddingPlayer;
     let finalCall = data.final;
+    let previousBids = data.previousBids;
     bidForm = self.add.dom(width - 250, 300).createFromCache('bidform');
     document.getElementById('currentBid').innerHTML = 'Current Bid: ' + currentBid + ' (' + biddingPlayer + ')';
     if(finalCall) {
@@ -153,6 +154,13 @@ function create() {
       }
       document.getElementById('finalButton').style.display = 'block';
     }
+
+    previousBids.forEach(function(item) {
+      let node = document.createElement('li');
+      let text = document.createTextNode(item);
+      node.appendChild(text);
+      document.getElementById('previousBids').appendChild(node);
+    });
     bidForm.addListener('click');
     bidForm.on('click', function (event) {
       if (event.target.name === 'bidButton' || event.target.name == 'finalButton') {
@@ -321,15 +329,15 @@ function bidToPoints(bid) {
     return 400;
   } else if(bid == '10H') {
     return 500;
-  } else if(bid == '6NT') {
+  } else if(bid == '6N') {
     return 120;
-  } else if(bid == '7NT') {
+  } else if(bid == '7N') {
     return 220;
-  } else if(bid == '8NT') {
+  } else if(bid == '8N') {
     return 320;
-  } else if(bid == '9NT') {
+  } else if(bid == '9N') {
     return 420;
-  } else if(bid == '10NT') {
+  } else if(bid == '10N') {
     return 520;
   }
   return 0;
