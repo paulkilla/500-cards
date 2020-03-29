@@ -7,8 +7,8 @@ So.... start of an online card game for 6 people playing 500!
 ## Getting Started
 Clone to repo, then:
 * npm install
-* might need to run this? npm install git+https://git@github.com/SyntaxC4/node-cards.git
 * npm start server.js
+ - If you get errors about some unicode chars in the cards.js I had to remove an item from line 67 of node_modules/cards/lib/cards.js (coin)
 
 This will start a local http server on 8081 (Access by http://localhost:8081, or on your local network on 
 http://ip.address:8081).
