@@ -13,7 +13,7 @@ let biddingPlayer = '';
 let currentBid = '';
 let passedPlayers = [];
 // Change this to deal cards earlier.
-const PLAYERS = 3;
+const PLAYERS = 6;
 
 app.use(express.static(__dirname + '/public'));
 
@@ -81,6 +81,7 @@ io.on('connection', function (socket) {
       biddingPlayer = socket.id;
       console.log("Final Bid submitted - Time to let the winning player see the kitty and choose their cards! " + players[biddingPlayer].name);
       socket.emit('showKitty');
+      socket.broadcast.emit('message', 'Waiting on ' + players[biddingPlayer].name + ' to discard 3 cards...');
     } else {
       // If false, it means everyone has passed except this last player.. so show form with final choice.
       let shown = showNextBidForm(socket, currentBid, biddingPlayer);
@@ -147,6 +148,13 @@ function startRound(socket, startingPlayer) {
   }
 }
 
+/**
+ * Broadcasts the bid form to the next player who hasn't passed yet.
+ * @param socket
+ * @param bid
+ * @param biddingPlayer
+ * @returns {boolean}
+ */
 function showNextBidForm(socket, bid, biddingPlayer) {
   console.log(biddingPlayer);
   currentPlayer = getNextPlayer(currentPlayer);
@@ -193,9 +201,23 @@ function createNewDeck(players) {
   let drawnCards = deck.draw(65);
   drawnCards.forEach(function(drawnCard, index) {
     if(drawnCard.value == 'joker') {
-      newDeck.push({Value: drawnCard.value, Suit: drawnCard.suit, Sprite: 65});
-    } else if(drawnCard.value != 13 && (drawnCard.suit != 'clubs' || drawnCard.suit != 'spades')) {
-      newDeck.push({Value: drawnCard.value, Suit: drawnCard.suit, Sprite: index});
+      newDeck.push({Value: drawnCard.value, Suit: drawnCard.suit, Sprite: 65, SortValue: 999});
+    } else {
+      if(drawnCard.value == 13 && (drawnCard.suit == 'spades' || drawnCard.suit == 'clubs')) {
+        console.log("We don't want these cards");
+      } else {
+        let rank = 0;
+        if(drawnCard.suit == 'spades') {
+          rank = `1${drawnCard.value}`
+        } else if (drawnCard.suit == 'clubs') {
+          rank = `2${drawnCard.value}`
+        } else if(drawnCard.suit == 'diamonds') {
+          rank = `3${drawnCard.value}`
+        } else if(drawnCard.suit == 'hearts') {
+          rank = `4${drawnCard.value}`
+        }
+        newDeck.push({Value: drawnCard.value, Suit: drawnCard.suit, Sprite: index, SortValue: rank});
+      }
     }
   });
   for (let i = newDeck.length - 1; i > 0; i--) {
