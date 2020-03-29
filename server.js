@@ -44,7 +44,6 @@ io.on('connection', function (socket) {
     // Change this to deal cards at an earlier point, otherwise 6?
     if(Object.keys(players).length == PLAYERS) {
       scores = {'blue': 0, 'red': 0};
-      io.emit('startGame', players);
       let startingPlayer = Math.round(Math.random() * (PLAYERS - 1));
       currentIndex = startingPlayer;
       startRound(socket, currentIndex);
@@ -91,11 +90,15 @@ io.on('connection', function (socket) {
     }
   });
 
-  socket.on('discardCards', function (data){
+  socket.on('discardCards', function (){
     console.log("Cards Discarded... starting game.");
-    console.log(data);
-
-    // io.emit('startGame', {'bid': currentBid, 'trumps': 'suit_here', 'tricks_required': 'tricks_required', 'bidWinner': players[biddingPlayer].name});
+    let matches = currentBid.match(/(\d+)/);
+    let tricksRequired = 10;
+    let trumps = currentBid.substr(currentBid.length - 1);
+    if (matches) {
+      tricksRequired = matches[0];
+    }
+    io.emit('startGame', {'bid': currentBid, 'trumps': trumps, 'tricksRequired': tricksRequired, 'bidWinner': biddingPlayer});
   });
 
 

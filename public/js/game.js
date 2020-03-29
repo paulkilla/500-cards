@@ -99,8 +99,17 @@ function create() {
     currentPlayerText = self.add.text(275, 400, 'Players: ' + listOfPlayers.substring(0, listOfPlayers.length - 2));
   });
 
-  socket.on('startGame', function (players) {
+  socket.on('startGame', function (data) {
     console.log("Start Game");
+    let currentBid = data.bid;
+    let trumps = data.trumps;
+    let tricksRequired = data.tricksRequired;
+    let bidWinner = data.bidWinner;
+    console.log("Bid: " + currentBid);
+    console.log("Trumps: " + trumps);
+    console.log("Tricks Needed: " + tricksRequired);
+    console.log("Bid Winner: " + bidWinner);
+
   });
 
   socket.on('broadcastDeck', function (deck) {
@@ -225,6 +234,7 @@ function create() {
               itemAgain.removeInteractive();
             }
           });
+          socket.emit('discardCards');
         }
         item.destroy();
       });
