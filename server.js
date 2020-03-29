@@ -206,17 +206,13 @@ function createNewDeck(players) {
       if(drawnCard.value == 13 && (drawnCard.suit == 'spades' || drawnCard.suit == 'clubs')) {
         console.log("We don't want these cards");
       } else {
-        let rank = 0;
-        if(drawnCard.suit == 'spades') {
-          rank = `1${drawnCard.value}`
-        } else if (drawnCard.suit == 'clubs') {
-          rank = `2${drawnCard.value}`
-        } else if(drawnCard.suit == 'diamonds') {
-          rank = `3${drawnCard.value}`
-        } else if(drawnCard.suit == 'hearts') {
-          rank = `4${drawnCard.value}`
+        let sortValue = index;
+        if(drawnCard.value == 'A') {
+          sortValue = index + 15;
+        } else {
+          sortValue = index - 1;
         }
-        newDeck.push({Value: drawnCard.value, Suit: drawnCard.suit, Sprite: index, SortValue: rank});
+        newDeck.push({Value: drawnCard.value, Suit: drawnCard.suit, Sprite: index, SortValue: sortValue});
       }
     }
   });

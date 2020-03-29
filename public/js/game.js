@@ -108,7 +108,6 @@ function create() {
     allCards = [];
     deck.forEach(function(hand, playerCount) {
       let cards = hand.cards;
-      console.log(cards);
       cards.sort((a, b) => (a.SortValue > b.SortValue) ? 1 : -1);
       cards.forEach(function(card,cardCount) {
         console.log(card.rank);
