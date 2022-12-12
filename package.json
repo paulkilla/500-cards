@@ -11,7 +11,7 @@
   "dependencies": {
     "cards": "git+https://git@github.com/SyntaxC4/node-cards.git",
     "console-stamp": "^0.2.9",
-    "express": "^4.16.3",
+    "express": "^4.17.3",
     "socket.io": "^2.1.0"
   },
   "devDependencies": {
